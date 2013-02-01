@@ -50,16 +50,24 @@ grouped =
 coffee_tweets_by_state = 
     FOREACH grouped
    GENERATE group as us_state,
+            SUM(with_state.is_coffee_tweet) AS num_coffee_tweets,
+            COUNT(with_state) AS num_tweets,
             100.0 * SUM(with_state.is_coffee_tweet) / COUNT(with_state) AS pct_coffee_tweets;
+
+-- filter out small states, where the population
+-- of tweets is too small to get a fair reading
+small_states_filtered =
+    FILTER coffee_tweets_by_state
+        BY num_tweets > 50000;
 
 -- Order by percentage to get the largest
 -- coffee snobs at the top
-ordered = 
-    ORDER coffee_tweets_by_state 
+ordered_output = 
+    ORDER small_states_filtered 
        BY pct_coffee_tweets DESC;
 
 -- Remove any existing output and store the results to S3
 rmf $OUTPUT_PATH;
-STORE ordered 
+STORE ordered_output 
  INTO '$OUTPUT_PATH'
 USING PigStorage('\t');
