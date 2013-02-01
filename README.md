@@ -21,3 +21,12 @@ In order to get a "normalized" delay, we take the arrival delay for a flight (ho
 
 Now let's take the average delay for each airline and sort it&mdash;`sorted_avg_normalized_delay_airline`.  Interestingly, most of the numbers are negative, which means that planes tend to make up time in the air--the departure delay is generally bigger than the arrival delay.  The sorted list tells us which airlines would perform best if all airports were created equal.
 
+## What Webpages was NASA Serving in 1995?
+This project is an example of parsing Apache logs to find the most-served resources by date. It takes a sample of two month's worth of logs from 
+NASA Kennedy Space Center's web server in 1995 and finds for each date the number of requests served, the number of bytes served, and
+the top 10 resources served. It can take a parameter ORDERING equal to either 'num_requests', to rank resources by the number of requests served,
+or 'num_bytes', to rank resources by number of bytes served.
+
+The output is not particularly interesting (though it was a bit surprising that NASA was serving hundreds of megabytes a day of video files
+all the way back in 1995), but the project demonstrates some tricky Pig concepts such as how to use group by a heirarchy of keys
+(in this case, first by URI and then by date) and how to use a nested FOREACH statement.
