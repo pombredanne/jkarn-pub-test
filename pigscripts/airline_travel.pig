@@ -61,7 +61,7 @@ join_both_delay = JOIN join_arrival_delay BY dest_airport_id, avg_delay_arrival_
 normalized_data_final = FOREACH join_both_delay 
                        GENERATE unique_carrier, ((arr_delay - avg_arrival_delay) - avg_departure_delay) as normalized_arrival_delay;
 
---Get the normalized badness for each airline
+-- Get the normalized badness for each airline
 normalized_data_by_airline = GROUP normalized_data_final BY (unique_carrier);
 avg_normalized_delay_airline =  FOREACH normalized_data_by_airline 
                                GENERATE group, AVG(normalized_data_final.normalized_arrival_delay) AS normalized_arrival_delay;

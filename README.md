@@ -18,10 +18,18 @@ For more help and tutorials on running Mortar, check out the [Mortar Help](http:
 
 # Examples
 
-## airline_travel
+## airline_travel: CSV Data from Bureau of Labor Statistics
 
 The [airline_travel](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/airline_travel.pig) pigscript takes data from the [Bureau of Transportation Statistics] (http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236) and uses it to find out how airlines perform when we normalize for the airports they fly from and to.
 
-## coffee_tweets
+## coffee_tweets: JSON Data from Twitter
 
 The [coffee_tweets](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/coffee_tweets.pig) pigscript answers the question "Which US state contains the highest concentration of coffee snobs?".  It analyzes and aggregates twitter data from the [twitter-gardenhose](https://github.com/mortardata/twitter-gardenhose), looking for telltale signs of coffee snobbery in tweets.
+
+## nasa_logs: Apache logs from Nasa
+
+The [nasa_logs](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/nasa_logs.pig) pigscript is an example of parsing Apache logs to find the most-served resources by date. It takes a sample of two month's worth of logs from 
+NASA Kennedy Space Center's web server in 1995 and finds for each date the number of requests served, the number of bytes served, and
+the top 10 resources served (images are filtered out since most of the requests are just for icons). It can take a parameter
+ORDERING equal to either 'num_requests', to rank resources by the number of requests served, or 'num_bytes', to rank resources
+by number of bytes served.
