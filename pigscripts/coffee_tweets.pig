@@ -1,20 +1,22 @@
-/**
+/*
  * Which US state is home to the highest concentration of coffee snobs?
- * Search for coffee snob tweets to answer the question. 
+ *
+ * Loads up a week's-worth of tweets from the twitter-gardenhose (https://github.com/mortardata/twitter-gardenhose),
+ * searches through them for telltale coffee snob phrases (single origin, la marzocco, etc) and rolls up the 
+ * results by US state.
  */
- 
--- Parameters - set default values here; you can override with -p on the command-line.
--- Note: uses MORTAR_EMAIL_S3_ESCAPED to put data into a different folder for everyone
+
+-- Set the destination for our output 
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/coffee_tweets'
 
--- User-Defined Functions (UDFs)
+-- Register the python User-Defined Functions (UDFs) we will use
 REGISTER '../udfs/python/twitter_places.py' USING streaming_python AS twitter_places;
 REGISTER '../udfs/python/coffee.py' USING streaming_python AS coffee;
 
--- Macros: for shared pig code
+-- Import shared code from pig macros to load up the twitter dataset
 IMPORT '../macros/tweets.pig';
 
--- Load up all of the tweets
+-- Load up all of the JSON-formatted tweets
 -- (to use just a single file, switch to SINGLE_TWEET_FILE())
 tweets = ALL_TWEETS();
 
@@ -35,7 +37,7 @@ coffee_tweets =
             coffee.is_coffee_tweet(text) AS is_coffee_tweet;
 
 -- Filter to make sure we only include results with
--- a US State defined
+-- where we found a US State
 with_state = 
     FILTER coffee_tweets
         BY us_state IS NOT NULL;
