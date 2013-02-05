@@ -26,6 +26,10 @@ The [airline_travel](https://github.com/mortardata/mortar-examples/blob/master/p
 
 The [coffee_tweets](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/coffee_tweets.pig) pigscript answers the question "Which US state contains the highest concentration of coffee snobs?".  It analyzes and aggregates twitter data from the [twitter-gardenhose](https://github.com/mortardata/twitter-gardenhose), looking for telltale signs of coffee snobbery in tweets.
 
+## excite: Search log data from excite! search engine
+
+The [excite](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/excite.pig) pigscript shows an example of loading search engine logs from the excite! search engine and joining them up to a users table.  This is a common pattern for web log analysis.
+
 ## nasa_logs: Apache logs from Nasa
 
 The [nasa_logs](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/nasa_logs.pig) pigscript is an example of parsing Apache logs to find the most-served resources by date. It takes a sample of two month's worth of logs from 
