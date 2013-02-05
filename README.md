@@ -14,7 +14,9 @@ Here we've included some example scripts that explore public data sets. To start
         cd mortar-examples
         mortar register mortar-examples
 
-For more help and tutorials on running Mortar, check out the [Mortar Help](http://help.mortardata.com/) site.
+Once you've setup the project, use the `mortar illustrate` command to show data flowing through a given script.  Use `mortar run` to run the script on a Hadoop cluster.
+
+For lots more help and tutorials on running Mortar, check out the [Mortar Help](http://help.mortardata.com/) site.
 
 ## Examples
 
