@@ -39,3 +39,11 @@ NASA Kennedy Space Center's web server in 1995 and finds for each date the numbe
 the top 10 resources served (images are filtered out since most of the requests are just for icons). It can take a parameter
 ORDERING equal to either 'num_requests', to rank resources by the number of requests served, or 'num_bytes', to rank resources
 by number of bytes served.
+
+### millionsong: Million song dataset
+
+Two pigscripts explore the publicly-available [Million Song Dataset](http://labrosa.ee.columbia.edu/millionsong/pages/field-list).
+
+The first, [top_density_songs](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/top_density_songs.pig) finds the songs with the most beats per second in the 1MM song dataset.  Code to ***REALLY FAST*** music!
+
+The second, [hottest_song_of_the_decade](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/hottest_song_of_the_decade.pig) figures out which song is the hottest for each decade of data in the million song dataset.
