@@ -1,5 +1,6 @@
 /*
- * Calculates sentiment analysis metrics for tweets
+ * Calculates metrics useful for sentiment analysis of tweets,
+ * and does a simple example analysis using a positivity/negativity metric.
  * 
  * All text is converted to lower case before being analyzed.
  * Words with non-alphabetic characters in the middle of them are ignored ("C3P0"), 
