@@ -1,12 +1,11 @@
 /*
  * Finds which words show up most frequently in tweets expressing positive and negative
- * sentiments relative to the word's frequency in the English language.
+ * sentiments relative to the word's frequency in the total corpus of tweets.
  *
  * Tweets are filtered to include only those which match the regular expression that 
  * that parameter SEARCH_PATTERN is set to. By default, the filter accepts all tweets.
  *
- * English word frequencies were generated from the Google Books corpus, top ~90k words only),
- * available at s3://mortar-example-data/ngrams/books/20120701/eng-all/dictionary_89609.txt
+ * Words are filtered so that only those with length >= MIN_WORD_LENGTH are counted.
  * 
  * All text is converted to lower case before being analyzed.
  * Words with non-alphabetic characters in the middle of them are ignored ("C3P0"), 
@@ -22,13 +21,12 @@
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/twitter_sentiment'
 
 %default SEARCH_PATTERN '^.*\\$'
+%default MIN_WORD_LENGTH '5'
 
--- Python udfs
+-- Load Python UDF's and Pig macros
 
 REGISTER '../udfs/python/words.py' USING streaming_python AS words_lib;
 REGISTER '../udfs/python/twitter_sentiment.py' USING streaming_python AS twitter_sentiment;
-
--- Pig macros
 
 IMPORT '../macros/tweets.pig';
 IMPORT '../macros/words.pig';
@@ -42,51 +40,44 @@ tweets = ALL_TWEETS();
 -- Filter tweets to only look at those that match the search pattern,
 -- counting the number of regex matches as a "relevance score"
 
-tweets_with_relevance   =   FOREACH tweets GENERATE 
-                                text,
-                                twitter_sentiment.relevance(text, '$SEARCH_PATTERN') AS relevance;
+tweets_with_relevance   =   FOREACH tweets 
+                            GENERATE text, twitter_sentiment.relevance(text, '$SEARCH_PATTERN') AS relevance;
 relevant_tweets         =   FILTER tweets_with_relevance BY (relevance > 0);
+
+-- Split the text of each tweet into words and calculate a sentiment score
+
 tweets_tokenized        =   FOREACH relevant_tweets GENERATE words_lib.words_from_text(text) AS words;
-tweets_with_sentiment   =   FOREACH tweets_tokenized GENERATE 
-                                words, 
-                                words_lib.sentiment(words) AS sentiment: double;
+tweets_with_sentiment   =   FOREACH tweets_tokenized 
+                            GENERATE words, words_lib.sentiment(words) AS sentiment: double;
 
 SPLIT tweets_with_sentiment INTO
     positive_tweets IF (sentiment > 0.0),
     negative_tweets IF (sentiment < 0.0);
 
--- Find the number of occurrences for each word in tweets expressing positive sentiments
--- We ignore non-english words and words with less then four letters
+-- Find the frequency of each word of at least MIN_WORD_LENGTH letters in all the tweets
+-- (frequency = the probability that a random word in the corpus is the given word)
 
-pos_tweet_word_counts   =   FOREACH positive_tweets GENERATE FLATTEN(words_lib.significant_english_word_count(words));
-pos_words               =   GROUP pos_tweet_word_counts BY word;
-pos_word_totals         =   FOREACH pos_words GENERATE 
-                                group AS word, 
-                                SUM(pos_tweet_word_counts.occurrences) AS occurrences;
+tweet_word_totals       =   WORD_TOTALS(tweets_tokenized, $MIN_WORD_LENGTH);
+tweet_word_frequencies  =   WORD_FREQUENCIES(tweet_word_totals);
 
--- Find the word frequency distribution of these words (normalizing occurrences against the total number of words)
+-- Find the frequencies of words that show up in tweets expressing positive sentiment, 
+-- and divide them by the frequencies of those words in the entire tweet corpus
+-- to find the relative frequency of each word. Take the top 100 of these
+-- positively associated words.
 
+pos_word_totals         =   WORD_TOTALS(positive_tweets, $MIN_WORD_LENGTH);
 pos_word_frequencies    =   WORD_FREQUENCIES(pos_word_totals);
+pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, tweet_word_frequencies);
+top_pos_associations    =   TOP_N(pos_rel_frequencies, rel_frequency, 100, 'DESC');
 
--- Rank words by their frequency in positive tweets divided by their frequency in the english language
+-- Do the same with negative words.
 
-pos_word_rel_frequencies    =   FOREACH pos_word_frequencies
-                                GENERATE *, words_lib.rel_word_frequency_to_english(word, frequency) AS rel_frequency;
-top_positive_associations   =   TOP_N(pos_word_rel_frequencies, rel_frequency, 100, 'DESC');
-
--- Same thing except with tweets expressing negative sentiments
-
-neg_tweet_word_counts       =   FOREACH negative_tweets GENERATE FLATTEN(words_lib.significant_english_word_count(words));
-neg_words                   =   GROUP neg_tweet_word_counts BY word;
-neg_word_totals             =   FOREACH neg_words GENERATE 
-                                    group AS word, 
-                                    SUM(neg_tweet_word_counts.occurrences) AS occurrences;
-neg_word_frequencies        =   WORD_FREQUENCIES(neg_word_totals);
-neg_word_rel_frequencies    =   FOREACH neg_word_frequencies
-                                GENERATE *, words_lib.rel_word_frequency_to_english(word, frequency) AS rel_frequency;
-top_negative_associations   =   TOP_N(neg_word_rel_frequencies, rel_frequency, 100, 'DESC');
+neg_word_totals         =   WORD_TOTALS(negative_tweets, $MIN_WORD_LENGTH);
+neg_word_frequencies    =   WORD_FREQUENCIES(neg_word_totals);
+neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies);
+top_neg_associations    =   TOP_N(neg_rel_frequencies, rel_frequency, 100, 'DESC');
 
 rmf $OUTPUT_PATH/positive;
 rmf $OUTPUT_PATH/negative;
-STORE top_positive_associations INTO '$OUTPUT_PATH/positive' USING PigStorage('\t');
-STORE top_negative_associations INTO '$OUTPUT_PATH/negative' USING PigStorage('\t');
+STORE top_pos_associations INTO '$OUTPUT_PATH/positive' USING PigStorage('\t');
+STORE top_neg_associations INTO '$OUTPUT_PATH/negative' USING PigStorage('\t');
