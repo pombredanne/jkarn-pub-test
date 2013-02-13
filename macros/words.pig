@@ -23,6 +23,9 @@ RETURNS rel_frequencies {
     filtered            =   FILTER joined BY ($corpus::frequency > $min_corpus_frequency);
     $rel_frequencies    =   FOREACH filtered GENERATE
                                 $subset::word AS word,
-                                $corpus::occurrences AS occurrences,
+                                $subset::occurrences AS subset_occurrences,
+                                $corpus::occurrences AS corpus_occurrences,
+                                $subset::frequency AS subset_frequency, 
+                                $corpus::frequency AS corpus_frequency, 
                                 $subset::frequency / $corpus::frequency AS rel_frequency;
 };

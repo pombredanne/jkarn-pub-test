@@ -6,23 +6,26 @@
  * that parameter SEARCH_PATTERN is set to. By default, the filter accepts all tweets.
  *
  * Words are filtered so that only those with length >= MIN_WORD_LENGTH are counted.
+ *
+ * Postive/negative associations (the words with the greatest relative frequency for positive/negative tweets)
+ * are filtered so as not to include the words which signalled positive/negative sentiment in the first place. 
+ * This way, you don't just get a list of words like "great" and "awesome".
  * 
  * All text is converted to lower case before being analyzed.
  * Words with non-alphabetic characters in the middle of them are ignored ("C3P0"), 
  * but words with non-alphabetic characters on the edges simply have them stripped ("totally!!!" -> "totally")
- *
- * Suggested improvements (left as exercises to the reader):
- *     Make the word-counts weighted by tweet relevance (how many SEARCH_PATTERN matches it has)
- *                               and by tweet influence (# of retweets + 1, for example)
- *     Aggregate by state (see coffee_tweets.pig for an example) -- "what makes NY happy vs CA?"
- *     Find trending words over time
  */
 
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/twitter_sentiment'
 
 %default SEARCH_PATTERN '^.*\\$'
-%default MIN_WORD_LENGTH '5'
-%default MIN_ASSOCIATION_FREQUENCY '0.000001'
+%default MIN_WORD_LENGTH '4'
+
+-- for reference:
+--     the 8,000'th most-frequent word in the English language has a frequency of ~ 0.00001
+--     the 33,000'th most-frequent word in the English language has a frequency of ~ 0.000001
+--     the 113,000'th most-frequent word in the English language has a frequency of ~ 0.0000001
+%default MIN_ASSOCIATION_FREQUENCY '0.0000005'
 
 -- Load Python UDF's and Pig macros
 
@@ -31,15 +34,13 @@ REGISTER '../udfs/python/twitter_sentiment.py' USING streaming_python AS twitter
 
 IMPORT '../macros/tweets.pig';
 IMPORT '../macros/words.pig';
-IMPORT '../macros/utils.pig';
 
 -- Load tweets
 
 tweets = LOAD 's3n://twitter-gardenhose-mortar/tweets' 
          USING org.apache.pig.piggybank.storage.JsonLoader('text: chararray');
 
--- Filter tweets to only look at those that match the search pattern,
--- counting the number of regex matches as a "relevance score"
+-- Filter tweets to only look at those that match the search pattern
 
 tweets_with_relevance   =   FOREACH tweets 
                             GENERATE text, twitter_sentiment.relevance(text, '$SEARCH_PATTERN') AS relevance;
@@ -63,20 +64,29 @@ tweet_word_frequencies  =   WORD_FREQUENCIES(tweet_word_totals);
 
 -- Find the frequencies of words that show up in tweets expressing positive sentiment, 
 -- and divide them by the frequencies of those words in the entire tweet corpus
--- to find the relative frequency of each word. Take the top 100 of these
--- positively associated words.
+-- to find the relative frequency of each word. 
 
 pos_word_totals         =   WORD_TOTALS(positive_tweets, $MIN_WORD_LENGTH);
 pos_word_frequencies    =   WORD_FREQUENCIES(pos_word_totals);
 pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
-top_pos_associations    =   TOP_N(pos_rel_frequencies, rel_frequency, 100, 'DESC');
+
+-- Take the top 100 of these positively associated words, 
+-- filtering out the words which signalled the positive sentiment in the first place (ex. "great", "awesome").
+
+pos_associations        =   ORDER pos_rel_frequencies BY rel_frequency DESC;
+pos_assoc_filtered      =   FILTER pos_associations BY (words_lib.in_word_set(word, 'positive') == 0);
+top_pos_associations    =   LIMIT pos_assoc_filtered 100;
 
 -- Do the same with negative words.
 
 neg_word_totals         =   WORD_TOTALS(negative_tweets, $MIN_WORD_LENGTH);
 neg_word_frequencies    =   WORD_FREQUENCIES(neg_word_totals);
 neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
-top_neg_associations    =   TOP_N(neg_rel_frequencies, rel_frequency, 100, 'DESC');
+neg_associations        =   ORDER neg_rel_frequencies BY rel_frequency DESC;
+neg_assoc_filtered      =   FILTER neg_associations BY (words_lib.in_word_set(word, 'negative') == 0);
+top_neg_associations    =   LIMIT neg_assoc_filtered 100;
+
+-- Remove any existing output and store to S3
 
 rmf $OUTPUT_PATH/positive;
 rmf $OUTPUT_PATH/negative;

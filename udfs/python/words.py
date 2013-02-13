@@ -93,7 +93,8 @@ negative_words = set([
 "unlucky", "unnotable", "unpleasant", "unpleasantly", "unsatisfactory", "unsatisfied", "unseemly", "unwelcoming", 
 "upset", "vicious", "vindictive", "weak", "wreck", "wrecked", "wrecking", "wrecks", 
 "wtf", "yucky", 
-"contentious", "flawed", "deal-breaking", "deal-breaker", "flaws", "flaw", "problem"
+"contentious", "flawed", "deal-breaking", "deal-breaker", "flaws", "flaw", 
+"miserable", "misery", "miserably", "excruciating"
 ])
 
 intensifier_words = set([
@@ -113,8 +114,9 @@ whitespace_pattern = re.compile('\\s+')
 non_english_character_pattern = re.compile("[^a-z']")
 word_with_punctuation_pattern = re.compile("^[^a-z']*([a-z']+)[^a-z']*$")
 
-code_tag_pattern = re.compile('<script.*?>.*?</script>|<style.*?>.*?</style>')
 tag_pattern = re.compile('<.*?>')
+paragraph_block_pattern = re.compile('<p.*?>(.*?)</p>')
+code_block_pattern = re.compile('<script.*?>.*?</script>|<style.*?>.*?</style>')
 
 def is_alphabetic(s):
     return len(s) > 0 and not bool(non_english_character_pattern.search(s))
@@ -130,16 +132,35 @@ def words_from_text(text):
         return None
 
 @outputSchema("words: {t: (word: chararray)}")
-def words_from_html(html):
+def words_from_html(html, paragraphs_only=False):
+    if paragraphs_only and paragraphs_only.lower() == 'true':
+        paragraphs_only = True
+
     parser = HTMLParser()
     parsed_html = parser.unescape(html)
-    text = re.sub(tag_pattern, ' ', re.sub(code_tag_pattern, '', re.sub(cr_or_lf_pattern, ' ', parsed_html)))
+
+    if paragraphs_only:
+        paragraphs = re.findall(paragraph_block_pattern, parsed_html)
+        text = ' '.join(paragraphs) if paragraphs else ''
+    else:
+        text = re.sub(code_block_pattern, '', re.sub(cr_or_lf_pattern, ' ', parsed_html))
+    
+    text = re.sub(tag_pattern, ' ', text)
     return words_from_text(text)
 
 @outputSchema("word_counts: {t: (word: chararray, occurrences: int)}")
 def significant_word_count(words_bag, min_length):
     word_list = [t[0] for t in words_bag if len(t) > 0]
     return [(w, word_list.count(w)) for w in set(word_list) if len(w) >= min_length]
+
+@outputSchema("in_word_set: int")
+def in_word_set(word, set_name):
+    if set_name == 'positive':
+        return (1 if word in positive_words else 0);
+    elif set_name == 'negative':
+        return (1 if word in negative_words else 0);
+    else:
+        raise ValueError('Invalid set name. Should be "positive" or "negative".')
 
 @outputSchema("sentiment: double")
 def sentiment(words_bag):
