@@ -14,34 +14,33 @@ positive_words = set([
 "caring", "celebrate", "celebrated", "celebrating", "charm", "charmed", "charming", "charmingly", 
 "cheer", "cheered", "cheerful", "cheerfully", "classic", "colorful", "colorfully", "colourful", 
 "colourfully", "comfort", "comfortably", "comforting", "comfortingly", "comfy", "competent", "competently", 
-"congrats", "congratulations", "considerate", "considerately", "cool", "courteous", "courteously", "creative", 
-"creatively", "cute", "dapper", "dazzled", "dazzling", "dazzlingly", "delicious", "deliciously", 
-"delight", "delighted", "delightful", "delightfully", "dope", "dynamic", "ecstatic", "efficient", 
-"efficiently", "elegant", "elegantly", "eloquent", "energetic", "energetically", "engaging", "engagingly", 
-"enjoy", "enjoyed", "enjoying", "enticing", "enticingly", "essential", "excellent", "excellently", 
-"exceptional", "excitement", "exciting", "excitingly", "exquisite", "exquisitely", "fantastic", "fascinating", 
-"fashionable", "fashionably", "fast", "favorite", "favorites", "favourite", "favourites", "fetching", 
-"fine", "flattering", "fond", "fondly", "friendly", "fulfilling", "fun", "generous", 
-"generously", "genius", "genuine", "glamor", "glamorous", "glamorously", "glamour", "glamourous", 
-"glamourously", "glorious", "good", "good-looking", "goodlooking", "gorgeous", "gorgeously", "grace", 
-"graceful", "gracefully", "great", "handsome", "happiness", "happy", "healthy", "heartwarming", 
-"heavenly", "helpful", "hip", "imaginative", "incredible", "ingenious", "innovative", "inspirational", 
-"inspired", "inspiring", "intelligent", "interesting", "invigorating", "irresistible", "irresistibly", "joy", 
-"kawaii", "keen", "knowledgeable", "liked", "lively", "love", "loved", "lovely", 
-"loving", "lucky", "luscious", "lusciously", "magical", "magnificent", "marvelous", "marvelously", 
-"masterful", "masterfully", "memorable", "mmm", "mmmm", "mmmmm", "natural", "neat", 
-"neatly", "nice", "nicely", "nifty", "optimistic", "outstanding", "outstandingly", "overjoyed", 
-"pampered", "peace", "peaceful", "phenomenal", "pleasant", "pleasantly", "pleasurable", "pleasurably", 
-"plentiful", "polished", "positive", "powerful", "powerfully", "precious", "prettily", "pretty", 
-"profound", "proud", "proudly", "quick", "quickly", "rad", "radiant", "rejoice", 
-"rejoiced", "rejoicing", "remarkable", "respectable", "respectably", "respectful", "satisfied", "serenity", 
-"sexily", "sexy", "shiny", "skilled", "skillful", "slick", "smooth", "spectacular", 
-"spicy", "splendid", "straightforward", "stunning", "stylish", "stylishly", "sublime", "succulent", 
-"super", "superb", "swell", "tastily", "tasty", "terrific", "thorough", "thrilled", 
-"thrilling", "tranquil", "tranquility", "treat", "unreal", "vivacious", "vivid", "warm", 
-"welcoming", "well-spoken", "win", "wonderful", "wonderfully", "wow", "wowed", "wowing", 
-"wows", "yummy", 
-"popular", "embrace", "embraced", "embracing", "coolest"
+"congrats", "congratulations", "considerate", "considerately", "cool", "coolest", "courteous", "courteously", 
+"creative", "creatively", "cute", "dapper", "dazzled", "dazzling", "dazzlingly", "delicious", 
+"deliciously", "delight", "delighted", "delightful", "delightfully", "dope", "dynamic", "ecstatic", 
+"efficient", "efficiently", "elegant", "elegantly", "eloquent", "embrace", "embraced", "embracing", 
+"energetic", "energetically", "engaging", "engagingly", "enjoy", "enjoyed", "enjoying", "enticing", 
+"enticingly", "essential", "excellent", "excellently", "exceptional", "excitement", "exciting", "excitingly", 
+"exquisite", "exquisitely", "fantastic", "fascinating", "fashionable", "fashionably", "fast", "favorite", 
+"favorites", "favourite", "favourites", "fetching", "fine", "flattering", "fond", "fondly", 
+"friendly", "fulfilling", "fun", "generous", "generously", "genius", "genuine", "glamor", 
+"glamorous", "glamorously", "glamour", "glamourous", "glamourously", "glorious", "good", "good-looking", 
+"goodlooking", "gorgeous", "gorgeously", "grace", "graceful", "gracefully", "great", "handsome", 
+"happiness", "happy", "healthy", "heartwarming", "heavenly", "helpful", "hip", "imaginative", 
+"incredible", "ingenious", "innovative", "inspirational", "inspired", "inspiring", "intelligent", "interesting", 
+"invigorating", "irresistible", "irresistibly", "joy", "kawaii", "keen", "knowledgeable", "liked", 
+"lively", "love", "loved", "lovely", "loving", "lucky", "luscious", "lusciously", 
+"magical", "magnificent", "marvelous", "marvelously", "masterful", "masterfully", "memorable", "mmm", 
+"mmmm", "mmmmm", "natural", "neat", "neatly", "nice", "nicely", "nifty", 
+"optimistic", "outstanding", "outstandingly", "overjoyed", "pampered", "peace", "peaceful", "phenomenal", 
+"pleasant", "pleasantly", "pleasurable", "pleasurably", "plentiful", "polished", "popular", "positive", 
+"powerful", "powerfully", "precious", "prettily", "pretty", "profound", "proud", "proudly", 
+"quick", "quickly", "rad", "radiant", "rejoice", "rejoiced", "rejoicing", "remarkable", 
+"respectable", "respectably", "respectful", "satisfied", "serenity", "sexily", "sexy", "shiny", 
+"skilled", "skillful", "slick", "smooth", "spectacular", "spicy", "splendid", "straightforward", 
+"stunning", "stylish", "stylishly", "sublime", "succulent", "super", "superb", "swell", 
+"tastily", "tasty", "terrific", "thorough", "thrilled", "thrilling", "tranquil", "tranquility", 
+"treat", "unreal", "vivacious", "vivid", "warm", "welcoming", "well-spoken", "win", 
+"wonderful", "wonderfully", "wow", "wowed", "wowing", "wows", "yummy"
 ])
 
 negative_words = set([
@@ -54,25 +53,26 @@ negative_words = set([
 "bossed-around", "bothered", "bothering", "bothers", "broke", "broken", "broken-hearted", "brokenhearted", 
 "brutal", "buggy", "bummed", "calamitous", "callous", "cheated", "cheating", "claustrophobic", 
 "clumsy", "colorless", "colourless", "conceited", "condescending", "confused", "confuses", "confusing", 
-"corrupt", "coward", "cowardly", "cowards", "creeper", "crestfallen", "cringe-worthy", "cringeworthy", 
-"cruel", "cunt", "cunts", "cursed", "cynical", "d-bag", "d-bags", "dbag", 
-"dbags", "degrading", "dehumanized", "dehumanizing", "delay", "delayed", "deplorable", "depressed", 
-"despicable", "destroyed", "destroying", "destroys", "detestable", "dick", "dicks", "died", 
-"dirty", "disappointed", "disappointing", "disappoints", "disaster", "disastrous", "disastrously", "disgruntled", 
-"disgusted", "disgusting", "disgustingly", "dismal", "disorganized", "disrespectful", "douche", "douchebag", 
-"douchebags", "dour", "dreadful", "dull", "dumb", "egocentric", "egotistical", "embarrassing", 
-"enraging", "erred", "erring", "error", "fail", "failed", "failing", "fails", 
-"failure", "fake", "falsehood", "folly", "fool", "foolish", 
-"fools", "forgettable", "fought", "freaked", "freaking", "frustrated", "frustrating", "fubar", 
-"fuck", "fuckers", "fugly", "furious", "gaudy", "ghastly", "gloomy", "greed", 
-"greedy", "grief", "grieve", "grieved", "grieving", "grouchy", "hassle", "hate", 
-"hated", "hating", "heart-breaking", "heart-broken", "heartbreaking", "heartbroken", "hellish", "hellishly", 
-"helpless", "horrendous", "horrible", "horribly", "horrific", "horrifically", "humiliated", "humiliating", 
-"hurt", "hurts", "icky", "idiot", "idiotic", "ignorant", "ignored", "ill", 
-"immature", "inane", "inattentive", "incompetent", "incompetently", "incomplete", "inconsiderate", "incorrect", 
-"indoctrinated", "inelegant", "infuriating", "infuriatingly", "insecure", "insignificant", "insufficient", "insult", 
-"insulted", "insulting", "interrupted", "jaded", "kill", "lame", "loathsome", "lonely", 
-"lose", "loser", "lost", "mad", "mean", "mediocre", "melodramatic", "missing", 
+"contentious", "corrupt", "coward", "cowardly", "cowards", "creeper", "crestfallen", "cringe-worthy", 
+"cringeworthy", "cruel", "cunt", "cunts", "cursed", "cynical", "d-bag", "d-bags", 
+"dbag", "dbags", "deal-breaker", "deal-breaking", "degrading", "dehumanized", "dehumanizing", "delay", 
+"delayed", "deplorable", "depressed", "despicable", "destroyed", "destroying", "destroys", "detestable", 
+"dick", "dicks", "died", "dirty", "disappointed", "disappointing", "disappoints", "disaster", 
+"disastrous", "disastrously", "disgruntled", "disgusted", "disgusting", "disgustingly", "dismal", "disorganized", 
+"disrespectful", "douche", "douchebag", "douchebags", "dour", "dreadful", "dull", "dumb", 
+"egocentric", "egotistical", "embarrassing", "enraging", "erred", "erring", "error", "excruciating", 
+"fail", "failed", "failing", "fails", "failure", "fake", "falsehood", "flaw", 
+"flawed", "flaws", "folly", "fool", "foolish", "fools", "forgettable", "fought", 
+"freaked", "freaking", "frustrated", "frustrating", "fubar", "fuck", "fuckers", "fugly", 
+"furious", "gaudy", "ghastly", "gloomy", "greed", "greedy", "grief", "grieve", 
+"grieved", "grieving", "grouchy", "hassle", "hate", "hated", "hating", "heart-breaking", 
+"heart-broken", "heartbreaking", "heartbroken", "hellish", "hellishly", "helpless", "horrendous", "horrible", 
+"horribly", "horrific", "horrifically", "humiliated", "humiliating", "hurt", "hurts", "icky", 
+"idiot", "idiotic", "ignorant", "ignored", "ill", "immature", "inane", "inattentive", 
+"incompetent", "incompetently", "incomplete", "inconsiderate", "incorrect", "indoctrinated", "inelegant", "infuriating", 
+"infuriatingly", "insecure", "insignificant", "insufficient", "insult", "insulted", "insulting", "interrupted", 
+"jaded", "kill", "lame", "loathsome", "lonely", "lose", "loser", "lost", 
+"mad", "mean", "mediocre", "melodramatic", "miserable", "miserably", "misery", "missing", 
 "mistake", "mistreated", "moron", "moronic", "mother-fucker", "mother-fuckers", "motherfucker", "motherfuckers", 
 "mourn", "mourned", "mugged", "nagging", "nasty", "nazi", "nazis", "negative", 
 "neurotic", "nonsense", "noo", "nooo", "nooooo", "nut-job", "nut-jobs", "nutjob", 
@@ -92,9 +92,7 @@ negative_words = set([
 "unfashionably", "unfriendly", "ungraceful", "ungrateful", "unhelpful", "unimpressive", "uninspired", "unjust", 
 "unlucky", "unnotable", "unpleasant", "unpleasantly", "unsatisfactory", "unsatisfied", "unseemly", "unwelcoming", 
 "upset", "vicious", "vindictive", "weak", "wreck", "wrecked", "wrecking", "wrecks", 
-"wtf", "yucky", 
-"contentious", "flawed", "deal-breaking", "deal-breaker", "flaws", "flaw", 
-"miserable", "misery", "miserably", "excruciating"
+"wtf", "yucky"
 ])
 
 intensifier_words = set([
@@ -105,7 +103,6 @@ intensifier_words = set([
 
 negation_words = set([
 "didn't", "don't", "lack", "lacked", "no-one", "nobody", "noone", "not", "wasn't", 
-"less"
 ])
 
 cr_or_lf_pattern = re.compile('\\r|\\n')
@@ -121,6 +118,10 @@ code_block_pattern = re.compile('<script.*?>.*?</script>|<style.*?>.*?</style>')
 def is_alphabetic(s):
     return len(s) > 0 and not bool(non_english_character_pattern.search(s))
 
+# Tokenizes a string into bag of single-element tuples, each containing a single word.
+# Strips casing and punctuation (ex. "Totally!!!" -> "totally").
+# Excludes words which still have non-alphabetic characters (not in a-z, ' is allowed as an exception)
+# after being stripped of punctuation.
 @outputSchema("words: {t: (word: chararray)}")
 def words_from_text(text):
     if text:
@@ -131,6 +132,8 @@ def words_from_text(text):
     else:
         return None
 
+# Strips tags and text inside of code blocks (style, script) from an html string
+# and then calls the words_from_text tokenizer on the result
 @outputSchema("words: {t: (word: chararray)}")
 def words_from_html(html, paragraphs_only=False):
     if paragraphs_only and paragraphs_only.lower() == 'true':
@@ -148,10 +151,12 @@ def words_from_html(html, paragraphs_only=False):
     text = re.sub(tag_pattern, ' ', text)
     return words_from_text(text)
 
-@outputSchema("word_counts: {t: (word: chararray, occurrences: int)}")
+# Finds the number of occurrences of each unique word in a bag of single-element word tuples, 
+# ignoring words of length < min_length
+@outputSchema("word_counts: {t: (word: chararray, occurrences: long)}")
 def significant_word_count(words_bag, min_length):
     word_list = [t[0] for t in words_bag if len(t) > 0]
-    return [(w, word_list.count(w)) for w in set(word_list) if len(w) >= min_length]
+    return [(w, long(word_list.count(w))) for w in set(word_list) if len(w) >= min_length]
 
 @outputSchema("in_word_set: int")
 def in_word_set(word, set_name):
@@ -162,6 +167,10 @@ def in_word_set(word, set_name):
     else:
         raise ValueError('Invalid set name. Should be "positive" or "negative".')
 
+# Estimates whether an ordered bag of words expresses a positive (> 0) or negative (< 0) sentiment.
+# Accounts for intensifier words (ex. "very") and negations (ex. "not"), but only if they
+# directly precede a word expressing positive/negative sentiment
+# (chains, ex. intensifier -> negation -> positive-word are handled)
 @outputSchema("sentiment: double")
 def sentiment(words_bag):
     if words_bag is None or len(words_bag) == 0:

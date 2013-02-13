@@ -26,6 +26,7 @@
 --     the 33,000'th most-frequent word in the English language has a frequency of ~ 0.000001
 --     the 113,000'th most-frequent word in the English language has a frequency of ~ 0.0000001
 %default MIN_ASSOCIATION_FREQUENCY '0.0000005'
+%default MAX_NUM_ASSOCIATIONS '100'
 
 -- Load Python UDF's and Pig macros
 
@@ -75,7 +76,7 @@ pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, twee
 
 pos_associations        =   ORDER pos_rel_frequencies BY rel_frequency DESC;
 pos_assoc_filtered      =   FILTER pos_associations BY (words_lib.in_word_set(word, 'positive') == 0);
-top_pos_associations    =   LIMIT pos_assoc_filtered 100;
+top_pos_associations    =   LIMIT pos_assoc_filtered $MAX_NUM_ASSOCIATIONS;
 
 -- Do the same with negative words.
 
@@ -84,7 +85,7 @@ neg_word_frequencies    =   WORD_FREQUENCIES(neg_word_totals);
 neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
 neg_associations        =   ORDER neg_rel_frequencies BY rel_frequency DESC;
 neg_assoc_filtered      =   FILTER neg_associations BY (words_lib.in_word_set(word, 'negative') == 0);
-top_neg_associations    =   LIMIT neg_assoc_filtered 100;
+top_neg_associations    =   LIMIT neg_assoc_filtered $MAX_NUM_ASSOCIATIONS;
 
 -- Remove any existing output and store to S3
 
