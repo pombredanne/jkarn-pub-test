@@ -23,13 +23,14 @@ pages   =   LOAD '$INPUT_PATH'
                 url: chararray, html: chararray
             );
 
-pages_tokenized             =   FOREACH pages GENERATE 
+pages_filtered              =   FILTER pages BY (url is not null AND html is not null);
+pages_tokenized             =   FOREACH pages_filtered GENERATE 
                                     url, 
                                     common_crawl.get_article_date_from_url(url) AS date, 
                                     words_lib.words_from_html(html, 'true') AS words;
-pages_filtered              =   FILTER pages_tokenized BY (url is not null AND date is not null);
+pages_filtered_2            =   FILTER pages_tokenized BY (url is not null AND date is not null);
 
-word_counts                 =   FOREACH pages_filtered 
+word_counts                 =   FOREACH pages_filtered_2 
                                 GENERATE url, date, FLATTEN(words_lib.significant_word_count(words, $MIN_WORD_LENGTH));
 
 word_counts_by_month        =   GROUP word_counts BY (word, date.year, date.month);
