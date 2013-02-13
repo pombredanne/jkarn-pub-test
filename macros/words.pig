@@ -17,10 +17,11 @@ RETURNS word_frequencies {
                                 (double)$1 / (double)$2 AS frequency: double;
 };
 
-DEFINE RELATIVE_WORD_FREQUENCIES(subset, corpus)
+DEFINE RELATIVE_WORD_FREQUENCIES(subset, corpus, min_corpus_frequency)
 RETURNS rel_frequencies {
     joined              =   JOIN $subset BY word, $corpus BY word;
-    $rel_frequencies    =   FOREACH joined GENERATE
+    filtered            =   FILTER joined BY ($corpus::frequency > $min_corpus_frequency);
+    $rel_frequencies    =   FOREACH filtered GENERATE
                                 $subset::word AS word,
                                 $corpus::occurrences AS occurrences,
                                 $subset::frequency / $corpus::frequency AS rel_frequency;

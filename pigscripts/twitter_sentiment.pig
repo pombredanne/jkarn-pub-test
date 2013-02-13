@@ -22,6 +22,7 @@
 
 %default SEARCH_PATTERN '^.*\\$'
 %default MIN_WORD_LENGTH '5'
+%default MIN_ASSOCIATION_FREQUENCY '0.000001'
 
 -- Load Python UDF's and Pig macros
 
@@ -34,8 +35,8 @@ IMPORT '../macros/utils.pig';
 
 -- Load tweets
 
--- Set to SINGLE_TWEET_FILE() for a small dataset to do a test run on (~20 MB)
-tweets = ALL_TWEETS();
+tweets = LOAD 's3n://twitter-gardenhose-mortar/tweets' 
+         USING org.apache.pig.piggybank.storage.JsonLoader('text: chararray');
 
 -- Filter tweets to only look at those that match the search pattern,
 -- counting the number of regex matches as a "relevance score"
@@ -67,14 +68,14 @@ tweet_word_frequencies  =   WORD_FREQUENCIES(tweet_word_totals);
 
 pos_word_totals         =   WORD_TOTALS(positive_tweets, $MIN_WORD_LENGTH);
 pos_word_frequencies    =   WORD_FREQUENCIES(pos_word_totals);
-pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, tweet_word_frequencies);
+pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
 top_pos_associations    =   TOP_N(pos_rel_frequencies, rel_frequency, 100, 'DESC');
 
 -- Do the same with negative words.
 
 neg_word_totals         =   WORD_TOTALS(negative_tweets, $MIN_WORD_LENGTH);
 neg_word_frequencies    =   WORD_FREQUENCIES(neg_word_totals);
-neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies);
+neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
 top_neg_associations    =   TOP_N(neg_rel_frequencies, rel_frequency, 100, 'DESC');
 
 rmf $OUTPUT_PATH/positive;
