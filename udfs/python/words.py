@@ -2,7 +2,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import re
 
+from collections import defaultdict
 from HTMLParser import HTMLParser
+from itertools import chain
 from pig_util import outputSchema
 
 positive_words = set([
@@ -115,6 +117,23 @@ tag_pattern = re.compile('<.*?>')
 paragraph_block_pattern = re.compile('<p.*?>(.*?)</p>')
 code_block_pattern = re.compile('<script.*?>.*?</script>|<style.*?>.*?</style>')
 
+# Decorator to help udf's handle null input like Pig does (just ignore it and return null)
+def null_if_input_null(fn):
+    def wrapped(*args, **kwargs):
+        for arg in args:
+            if arg is None:
+                return None
+        for k, v in kwargs.items():
+            if v is None:
+                return None
+        return fn(*args, **kwargs)
+
+    wrapped.__name__ = fn.__name__
+    wrapped.__doc__ = fn.__doc__
+    wrapped.__dict__.update(fn.__dict__)
+
+    return wrapped
+
 def is_alphabetic(s):
     return len(s) > 0 and not bool(non_english_character_pattern.search(s))
 
@@ -123,42 +142,48 @@ def is_alphabetic(s):
 # Excludes words which still have non-alphabetic characters (not in a-z, ' is allowed as an exception)
 # after being stripped of punctuation.
 @outputSchema("words: {t: (word: chararray)}")
+@null_if_input_null
 def words_from_text(text):
-    if text:
-        return [(word, ) for word in 
-                [re.sub(word_with_punctuation_pattern, '\\1', word) 
-                 for word in re.split(whitespace_pattern, text.lower())
-                ] if is_alphabetic(word)]
-    else:
-        return None
+    return [(word, ) for word in 
+            [re.sub(word_with_punctuation_pattern, '\\1', word) 
+             for word in re.split(whitespace_pattern, text.lower())
+            ] if is_alphabetic(word)]
 
-# Strips tags and text inside of code blocks (style, script) from an html string
-# and then calls the words_from_text tokenizer on the result
+# Preprocesses html before sending it to the words_from_text tokenizer, removing all tags.
+#
+# If paragraphs_only is set to 'true' (Pig 0.9.2 can pass strings to udf's but has no boolean type),
+# it will extract words only form inside <p> tags which have at least min_words_per_paragraph.
 @outputSchema("words: {t: (word: chararray)}")
-def words_from_html(html, paragraphs_only=False):
+@null_if_input_null
+def words_from_html(html, paragraphs_only=False, min_words_per_paragraph=0):
     if paragraphs_only and paragraphs_only.lower() == 'true':
         paragraphs_only = True
 
     parser = HTMLParser()
-    parsed_html = parser.unescape(html)
+    parsed_html = re.sub(cr_or_lf_pattern, ' ', parser.unescape(html))
 
     if paragraphs_only:
-        paragraphs = re.findall(paragraph_block_pattern, parsed_html)
-        text = ' '.join(paragraphs) if paragraphs else ''
+        paragraphs = [words_from_text(re.sub(tag_pattern, ' ', s)) 
+                      for s in re.findall(paragraph_block_pattern, parsed_html)]
+        return list(chain.from_iterable([words for words in paragraphs if len(words) >= min_words_per_paragraph]))
     else:
-        text = re.sub(code_block_pattern, '', re.sub(cr_or_lf_pattern, ' ', parsed_html))
-    
-    text = re.sub(tag_pattern, ' ', text)
-    return words_from_text(text)
+        text = re.sub(code_block_pattern, '', text)
+        text = re.sub(tag_pattern, ' ', text)
+        return words_from_text(text)
 
 # Finds the number of occurrences of each unique word in a bag of single-element word tuples, 
 # ignoring words of length < min_length
 @outputSchema("word_counts: {t: (word: chararray, occurrences: long)}")
+@null_if_input_null
 def significant_word_count(words_bag, min_length):
-    word_list = [t[0] for t in words_bag if len(t) > 0]
-    return [(w, long(word_list.count(w))) for w in set(word_list) if len(w) >= min_length]
+    word_list = [t[0] for t in words_bag if len(t) > 0 and len(t[0]) >= min_length]
+    count = defaultdict(int)
+    for word in word_list:
+        count[word] += 1
+    return count.items()
 
 @outputSchema("in_word_set: int")
+@null_if_input_null
 def in_word_set(word, set_name):
     if set_name == 'positive':
         return (1 if word in positive_words else 0);
@@ -172,8 +197,9 @@ def in_word_set(word, set_name):
 # directly precede a word expressing positive/negative sentiment
 # (chains, ex. intensifier -> negation -> positive-word are handled)
 @outputSchema("sentiment: double")
+@null_if_input_null
 def sentiment(words_bag):
-    if words_bag is None or len(words_bag) == 0:
+    if len(words_bag) == 0:
         return 0.0
 
     score = 0.0
