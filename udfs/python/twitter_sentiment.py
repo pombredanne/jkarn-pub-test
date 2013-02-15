@@ -1,9 +1,8 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import re
-
 from pig_util import outputSchema
 
+# Calculate how "relevant" a text is to a regex pattern,
+# defining relevance as the number of matches in the text to that pattern
 @outputSchema("relevance: int")
 def relevance(text, pattern_str):
     if text:

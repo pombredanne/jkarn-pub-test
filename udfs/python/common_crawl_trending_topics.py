@@ -41,6 +41,10 @@ def get_article_date_from_url(url):
 
     return None
 
+# The history of word frequency for each month stored in the relation "freqs_by_word_ordered" in common_crawl_trending_topics.pig
+# skips months where that word did not occur. Therefore, when calculating a word's "frequency velocity", we test whether input tuples
+# are from consecutive months: if they are, we look at them relative to each other; if they are not, we know that the actual
+# preceding month had 0 occurrences of the word.
 def consecutive_months(last_year, last_month_of_year, year, month_of_year):
     if (year == last_year and month_of_year == last_month_of_year + 1) or (year == last_year + 1 and last_month_of_year == 12 and month_of_year == 1):
         return True
@@ -56,11 +60,14 @@ def word_relative_velocity(cur, prev):
     else:
         return None
 
+# Word frequencies are usually very small, so we use a multiplier
+# to make weights easoer to interpret when debugging
 def word_velocity_weight(abs_vel, rel_vel):
     mult = 1000000.0
     return mult * abs_vel * rel_vel * (-1.0 if abs_vel < 0.0 else 1.0)
 
-# velocity = f( g(absolute change from previous month), h(relative change from previous month) )
+# A word's "velocity" is a metric we define to describe how it's frequency is changing over time
+# We take into account both absolute changes in frequency and relative changes of frequency
 @outputSchema("word_velocities: {t: (word: chararray, month: chararray, frequency: double, abs_vel: double, rel_vel: double, velocity: double)}")
 @null_if_input_null
 def word_velocity_over_time(word, trend):

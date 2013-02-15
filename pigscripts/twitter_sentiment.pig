@@ -30,13 +30,14 @@
 
 -- Load Python UDF's and Pig macros
 
-REGISTER '../udfs/python/words.py' USING streaming_python AS words_lib;
+REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
 REGISTER '../udfs/python/twitter_sentiment.py' USING streaming_python AS twitter_sentiment;
 
 IMPORT '../macros/tweets.pig';
 IMPORT '../macros/words.pig';
 
 -- Load tweets
+-- To improve performance, we tell the JsonLoader to only load the field that we need (text)
 
 tweets = LOAD 's3n://twitter-gardenhose-mortar/tweets' 
          USING org.apache.pig.piggybank.storage.JsonLoader('text: chararray');
@@ -59,6 +60,7 @@ SPLIT tweets_with_sentiment INTO
 
 -- Find the frequency of each word of at least MIN_WORD_LENGTH letters in all the tweets
 -- (frequency = the probability that a random word in the corpus is the given word)
+-- The macros used are in macros/words.pig
 
 tweet_word_totals       =   WORD_TOTALS(tweets_tokenized, $MIN_WORD_LENGTH);
 tweet_word_frequencies  =   WORD_FREQUENCIES(tweet_word_totals);

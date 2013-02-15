@@ -2,21 +2,35 @@
  * Finds trending topics (currently single-words only) by month for a corpus
  * of articles from technology news sites (gigaom, techcrunch, allthingsd).
  *
- * The corpus was extracted from the Common Crawl (hosted on S3) 
- * using an index by domain maintained by Triv.io. 
- * Mortar has contributed to the index project a script which copies the results 
- * from searching the index for a list of domains to an S3 location of your choosing:
- * [LINK TO SCRIPT]
+ * The script uses several GROUP, nested FOREACH, and FLATTEN operations, 
+ * and at points the implementation may be hard to follow. To see the schema
+ * of each relation in the data pipeline, you can run the command:
  *
- * Warning: as the crawl contains a lot of data, this script will moderately
- * substantial amount of node-hours to complete. We recommend running it with
- * a cluser size of [RECOMMENDED CLUSTER SIZE]
+ * mortar describe common_crawl_trending_topics trending_words_by_month
+ *
+ * The corpus was extracted from the Common Crawl (hosted on S3) 
+ * using an index by domain maintained by Triv.io.
+ *
+ * This script is highly performance bounded by the word tokenization and counting udf's,
+ * so running on the entire tech sites crawl (~3.3GB compressed) is not currently feasible.
+ * The default is to run on a subset of the crawl (~500MB compressed).
+ *
+ * Ways to dramatically improve performance:
+ *     Reimplement the tokenization and counting using a pure Java UDF
+ *     Split the script into two parts:
+ *         The first part calculates the word counts by month and stores that in S3
+ *         The other part takes the stored counts and calculates trending topics
+ *         This way, if you wish to tweak the trending topics algorithm, you don't have to recalculate the word counts
+ *
+ * Recommended cluster size with default parameters: 20
  */
 
--- %default INPUT_PATH 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz'
-%default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4914.gz'
--- %default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz'
--- %default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz'
+-- Loads 500MB compressed data by default
+-- Change to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz' to load the full 3.3GB compressed dataset
+-- Change to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' to load a small dataset 
+-- of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing
+
+%default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz'
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/common_crawl';
 
 -- Only text inside <p> elements from the html is considered by the script
@@ -34,11 +48,14 @@
 
 %default MAX_NUM_TRENDING_WORDS_PER_MONTH '25'
 
--- TODO: FIGURE OUT JAR SITUATION
+-- TODO: compile crawl loader outside of piggybank and host it in mortar-example-data
 
 REGISTER 's3n://mortar-dogfood-data/piggybank.jar';
-REGISTER 's3n://mortar-dogfood-data/httpcore-4.2.2.jar';
-REGISTER 's3n://mortar-dogfood-data/jsoup-1.7.2.jar';
+
+-- Jars needed by com.commoncrawl.pig.ArcLoader() to run
+
+REGISTER 's3n://mortar-example-data/common-crawl/jars/httpcore-4.2.2.jar';
+REGISTER 's3n://mortar-example-data/common-crawl/jars/jsoup-1.7.2.jar';
 
 -- Load Python udf's and Pig macros
 
@@ -119,7 +136,9 @@ pos_velocities_by_month     =   GROUP positive_velocities BY month PARALLEL 1;
 trending_words_by_month     =   FOREACH pos_velocities_by_month {
                                     ordered_velocities = ORDER positive_velocities BY velocity DESC;
                                     top_velocities = LIMIT ordered_velocities $MAX_NUM_TRENDING_WORDS_PER_MONTH;
-                                    GENERATE group AS month, top_velocities.(word, frequency, abs_vel, rel_vel, velocity) AS trending_words;
+                                    -- for debugging, change "top_velocities.word"
+                                    -- to "top_velocities.(word, frequency, abs_vel, rel_vel, velocity)"
+                                    GENERATE group AS month, top_velocities.word AS trending_words;
                                 }
 
 -- Remove any existing output and store to S3

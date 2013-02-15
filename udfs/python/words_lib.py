@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import unicode_literals
 
 import re
 
@@ -134,13 +134,14 @@ def null_if_input_null(fn):
 
     return wrapped
 
+# Accepts strings consisting of 1 or more characters in [a-z']
+# (the apostrophe is so that contraction words such as don't are accepted)
 def is_alphabetic(s):
     return len(s) > 0 and not bool(non_english_character_pattern.search(s))
 
 # Tokenizes a string into bag of single-element tuples, each containing a single word.
 # Strips casing and punctuation (ex. "Totally!!!" -> "totally").
-# Excludes words which still have non-alphabetic characters (not in a-z, ' is allowed as an exception)
-# after being stripped of punctuation.
+# Excludes words which are not accepted by is_alphabetic after being stripped of punctuation.
 @outputSchema("words: {t: (word: chararray)}")
 @null_if_input_null
 def words_from_text(text):
@@ -182,6 +183,8 @@ def significant_word_count(words_bag, min_length):
         count[word] += 1
     return count.items()
 
+# Returns whether a word is the positive_words / negative_words sets defined in this library
+# Pig 0.9.2 does not have a boolean datatype (this is implemented in Pig 0.10+), so we use 1 = true, 0 = false. 
 @outputSchema("in_word_set: int")
 @null_if_input_null
 def in_word_set(word, set_name):
