@@ -2,6 +2,10 @@
  * Finds trending topics (currently single-words only) by month for a corpus
  * of articles from technology news sites (gigaom, techcrunch, allthingsd).
  *
+ * Recommended cluster size with default parameters: 20
+ * Approximate running time with recommended cluster size: 45 minutes
+ * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
+ *
  * The script uses several GROUP, nested FOREACH, and FLATTEN operations, 
  * and at points the implementation may be hard to follow. To see the schema
  * of each relation in the data pipeline, you can run the command:
@@ -21,8 +25,6 @@
  *         The first part calculates the word counts by month and stores that in S3
  *         The other part takes the stored counts and calculates trending topics
  *         This way, if you wish to tweak the trending topics algorithm, you don't have to recalculate the word counts
- *
- * Recommended cluster size with default parameters: 20
  */
 
 -- Loads 500MB compressed data by default

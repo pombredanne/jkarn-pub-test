@@ -2,6 +2,10 @@
  * Finds which words show up most frequently in tweets expressing positive and negative
  * sentiments relative to the word's frequency in the total corpus of tweets.
  *
+ * Recommended cluster size with default parameters: 10
+ * Approximate running time with recommended cluster size: 30 minutes
+ * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
+ *
  * Tweets are filtered to include only those which match the regular expression that 
  * that parameter SEARCH_PATTERN is set to. By default, the filter accepts all tweets.
  *
