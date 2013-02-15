@@ -48,19 +48,16 @@
 
 %default MAX_NUM_TRENDING_WORDS_PER_MONTH '25'
 
--- TODO: compile crawl loader outside of piggybank and host it in mortar-example-data
-
-REGISTER 's3n://mortar-dogfood-data/piggybank.jar';
-
 -- Jars needed by com.commoncrawl.pig.ArcLoader() to run
 
+REGISTER 's3n://mortar-example-data/common-crawl/jars/piggybank-with-arc-loader.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/httpcore-4.2.2.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/jsoup-1.7.2.jar';
 
 -- Load Python udf's and Pig macros
 
-REGISTER '../udfs/python/words.py' USING streaming_python AS words_lib;
-REGISTER '../udfs/python/common_crawl.py' USING streaming_python AS common_crawl;
+REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
+REGISTER '../udfs/python/common_crawl_trending_topics.py' USING streaming_python AS common_crawl;
 
 IMPORT '../macros/words.pig';
 
