@@ -1,6 +1,7 @@
 import re
 from HTMLParser import HTMLParser
 from pig_util import outputSchema
+from math import sqrt
 
 # Decorator to help udf's handle null input like Pig does (just ignore it and return null)
 def null_if_input_null(fn):
@@ -42,14 +43,6 @@ def get_article_date_from_url(url):
 
     return None
 
-paragraph_block_pattern = re.compile('<p.*?>(.*?)</p>')
-
-# Extracts the text from each <p>-tag delimited paragraph in an html string
-@outputSchema("paragraphs: {t: (paragraph: chararray)}")
-@null_if_input_null
-def extract_paragraphs(html):
-    return [(s,) for s in re.findall(paragraph_block_pattern, html)]
-
 # The history of word frequency for each month stored in the relation "freqs_by_word_ordered" in common_crawl_trending_topics.pig
 # skips months where that word did not occur. Therefore, when calculating a word's "frequency velocity", we test whether input tuples
 # are from consecutive months: if they are, we look at them relative to each other; if they are not, we know that the actual
@@ -64,8 +57,9 @@ def consecutive_months(last_year, last_month_of_year, year, month_of_year):
 # This keeps proportional increases and decreases on the same weighting scale 
 def word_relative_velocity(cur, prev):
     if cur > 0.0 and prev > 0.0:
-        ratio = 1.0 + ((cur - prev) / prev)
-        return ratio if cur >= prev else -1.0/ratio
+        # should never be negative even without the abs, but who knows what weirdness floating point arithmetic can cause
+        ratio = abs(1.0 + ((cur - prev) / prev))
+        return sqrt(ratio) if cur >= prev else -sqrt(1.0/ratio)
     else:
         return None
 

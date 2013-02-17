@@ -2,9 +2,8 @@
  * Finds trending topics (currently single-words only) by month for a corpus
  * of articles from technology news sites (gigaom, techcrunch, allthingsd).
  *
- * Recommended cluster size with default parameters: 20
- * Approximate running time with recommended cluster size: 45 minutes
- * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
+ * Recommended cluster size with default parameters: 15
+ * Approximate running time with recommended cluster size: 40 minutes
  *
  * The script uses several GROUP, nested FOREACH, and FLATTEN operations, 
  * and at points the implementation may be hard to follow. To see the schema
@@ -14,25 +13,15 @@
  *
  * The corpus was extracted from the Common Crawl (hosted on S3) 
  * using an index by domain maintained by Triv.io.
- *
- * This script is highly performance bounded by the word tokenization and counting udf's,
- * so running on the entire tech sites crawl (~3.3GB compressed) is not currently feasible.
- * The default is to run on a subset of the crawl (~500MB compressed).
- *
- * Ways to dramatically improve performance:
- *     Reimplement the tokenization and counting using a pure Java UDF
- *     Split the script into two parts:
- *         The first part calculates the word counts by month and stores that in S3
- *         The other part takes the stored counts and calculates trending topics
- *         This way, if you wish to tweak the trending topics algorithm, you don't have to recalculate the word counts
  */
 
--- Loads 500MB compressed data by default
--- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz' to load the full 3.3GB compressed dataset
--- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' to load a small dataset 
--- of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing
+-- Loads 3.3GB compressed data by default
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' 
+-- to load a small dataset of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing tokenization
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz' 
+-- to load a 500MB subset of the tech sites crawl for testing word counts / trending topics
 
-%default INPUT_PATH 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz'
+%default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz'
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/common_crawl';
 
 -- Only text inside <p> elements from the html is considered by the script
@@ -52,7 +41,7 @@
 
 -- Jars needed by com.commoncrawl.pig.ArcLoader() to run
 
-REGISTER 's3n://mortar-example-data/common-crawl/jars/piggybank-with-arc-loader.jar';
+REGISTER 's3n://mortar-example-data/common-crawl/jars/piggybank-for-crawl.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/httpcore-4.2.2.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/jsoup-1.7.2.jar';
 
@@ -88,7 +77,12 @@ pages_filtered          =   FILTER pages_preprocessed BY (date is not null);
 
 paragraphs              =   FOREACH pages_filtered GENERATE
                                 CONCAT(date.year, CONCAT('-', date.month)) AS month, 
-                                FLATTEN(common_crawl.extract_paragraphs(html)) AS paragraph;
+                                FLATTEN(
+                                    -- non-standard piggybank function from piggybank-for-crawl.jar
+                                    -- it is in the piggybank package because at some point we'd like to contribute it
+                                    -- to the official piggybank, but haven't gotten around to it yet
+                                    org.apache.pig.piggybank.evaluation.string.RegexExtractAllToBag(html, '<p.*?>(.*?)</p>')
+                                ) AS paragraph;
 
 -- Lowercase all text, remove html tags, and trim leading and trailing whitespace from each paragraph
 -- Tokenize each paragraph into words, and filter out paragraphs with few words 
@@ -99,14 +93,16 @@ paragraph_texts         =   FOREACH paragraphs
 paragraphs_tokenized    =   FOREACH paragraph_texts
                             GENERATE month, TOKENIZE(paragraph) AS words;
 paragraphs_filtered     =   FILTER paragraphs_tokenized
-                            BY (COUNT(words) >= $MIN_WORDS_PER_PARAGRAPH);
+                            BY (words is not null) AND (COUNT(words) >= $MIN_WORDS_PER_PARAGRAPH);
 
 -- Flatten the tokenized paragraphs into a relation of individual words
 -- Filter out small words (probably not interesting)
 
 words                   =   FOREACH paragraphs_filtered 
                             GENERATE FLATTEN(words) AS word: chararray, month;
-words_filtered          =   FILTER words BY (SIZE(word) >= $MIN_WORD_LENGTH);
+words_letters_only      =   FOREACH words 
+                            GENERATE REPLACE(word, '[^a-z]+', '') AS word, month;
+words_filtered          =   FILTER words_letters_only BY (SIZE(word) >= $MIN_WORD_LENGTH);
 
 -- Get the total number of occurrences of each word in each month
 
@@ -155,7 +151,7 @@ trending_words_by_month     =   FOREACH pos_velocities_by_month {
                                     top_velocities = LIMIT ordered_velocities $MAX_NUM_TRENDING_WORDS_PER_MONTH;
                                     -- for debugging, change "top_velocities.word"
                                     -- to "top_velocities.(word, frequency, abs_vel, rel_vel, velocity)"
-                                    GENERATE group AS month, top_velocities.(word, frequency, abs_vel, rel_vel, velocity) AS trending_words;
+                                    GENERATE group AS month, top_velocities.word AS trending_words;
                                 }
 
 -- Remove any existing output and store to S3
