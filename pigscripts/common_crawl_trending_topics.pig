@@ -28,11 +28,11 @@
  */
 
 -- Loads 500MB compressed data by default
--- Change to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz' to load the full 3.3GB compressed dataset
--- Change to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' to load a small dataset 
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz' to load the full 3.3GB compressed dataset
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' to load a small dataset 
 -- of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing
 
-%default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz'
+%default INPUT_PATH 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/6284.gz'
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/common_crawl';
 
 -- Only text inside <p> elements from the html is considered by the script
@@ -56,12 +56,9 @@ REGISTER 's3n://mortar-example-data/common-crawl/jars/piggybank-with-arc-loader.
 REGISTER 's3n://mortar-example-data/common-crawl/jars/httpcore-4.2.2.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/jsoup-1.7.2.jar';
 
--- Load Python udf's and Pig macros
+-- Load Python udf's
 
-REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
 REGISTER '../udfs/python/common_crawl_trending_topics.py' USING streaming_python AS common_crawl;
-
-IMPORT '../macros/words.pig';
 
 -- Load common-crawl webpages
 
@@ -74,43 +71,68 @@ pages   =   LOAD '$INPUT_PATH'
             );
 
 -- Extract an article date from each page's url, ex. 'http://techcrunch.com/2013/02/13/melodrama' -> ('2013', '02', '13')
--- Extract paragraphs with at least MIN_WORDS_PER_PARAGRAPH words from the html and tokenize them
+-- Preprocess the html: 
+--     Remove newlines (CR and/or LF) since we will be extracting multiline paragraphs in the next steps
+--     Ignore escape sequences (ex. '&nbsp;' or '&quot;' -> ' '). 
+--     (we could unescape them with a python udf, but it is not worth the performance hit)
+-- Filter out pages for which a date could not be found
 
-pages_tokenized             =   FOREACH pages GENERATE 
-                                    url, 
-                                    common_crawl.get_article_date_from_url(url) AS date, 
-                                    words_lib.words_from_html(html, 'true', $MIN_WORDS_PER_PARAGRAPH) AS words;
+pages_preprocessed      =   FOREACH pages GENERATE
+                                common_crawl.get_article_date_from_url(url) AS date, 
+                                REPLACE(html, '\\r|\\n|&.*?;', ' ') AS html;
+pages_filtered          =   FILTER pages_preprocessed BY (date is not null);
 
--- Get rid of any pages for which we couldn't find a date
+-- Extract paragraphs (text inside <p> tags) from the html and flatten
+-- We will be be aggregating by (year, month), so we combine those parts of the date into a single field for convenience
+-- The schema of each resulting tuple is (month: chararray, paragraph: chararray)
 
-pages_filtered              =   FILTER pages_tokenized BY (date is not null);
+paragraphs              =   FOREACH pages_filtered GENERATE
+                                CONCAT(date.year, CONCAT('-', date.month)) AS month, 
+                                FLATTEN(common_crawl.extract_paragraphs(html)) AS paragraph;
 
--- Get word counts for each page, excluding words with less than MIN_WORD_LENGTH letters
+-- Lowercase all text, remove html tags, and trim leading and trailing whitespace from each paragraph
+-- Tokenize each paragraph into words, and filter out paragraphs with few words 
+-- (these are probably miscellaneous text on the page not part of the main text of the article)
 
-word_counts                 =   FOREACH pages_filtered 
-                                GENERATE url, date, FLATTEN(words_lib.significant_word_count(words, $MIN_WORD_LENGTH));
+paragraph_texts         =   FOREACH paragraphs 
+                            GENERATE month, TRIM(REPLACE(LOWER(paragraph), '<.*?>', ' ')) AS paragraph;
+paragraphs_tokenized    =   FOREACH paragraph_texts 
+                            GENERATE month, STRSPLIT(paragraph, '\\s+') AS words;
+paragraphs_filtered     =   FILTER paragraphs_tokenized 
+                            BY (SIZE(words) >= $MIN_WORDS_PER_PARAGRAPH);
 
--- Group these counts by month ('yyyy-mm') and find the totals across all pages for each month
+-- Flatten the tokenized paragraphs into a relation of individual words
+-- Trim punctuation at the beginning and end of each word (ex. "totally!!!" -> "totally")
+-- Filter out small words (probably not interesting) and words with non-Latin characters
 
-word_counts_by_month        =   GROUP word_counts BY (word, date.year, date.month);
-word_totals_per_month       =   FOREACH word_counts_by_month GENERATE
-                                    group.$0 AS word, 
-                                    CONCAT(group.$1, CONCAT('-', group.$2)) AS month: chararray, 
-                                    SUM(word_counts.occurrences) AS occurrences;
+words                   =   FOREACH paragraphs_filtered 
+                            GENERATE month, FLATTEN(words) AS word: chararray;
+words_no_punctuation    =   FOREACH words 
+                            GENERATE month, common_crawl.trim_punctuation(word);
+words_filtered          =   FILTER words_no_punctuation 
+                            BY (SIZE(word) >= $MIN_WORD_LENGTH) AND NOT (word MATCHES '.*[^a-z\'].*');
+
+-- Get the total number of occurrences of each word in each month
+
+words_grouped           =   GROUP words_filtered BY (word, month);
+word_counts_per_month   =   FOREACH words_grouped GENERATE
+                                group.$0 AS word,
+                                group.$1 AS month,
+                                COUNT(words_filtered) AS occurrences;
 
 -- Normalize the word counts against the total number of words in each month, resulting in a word frequency
 -- (frequency = probability that a random word in the corpus is the given one)
 -- Reflatten the word-month-frequency triples
 
-all_words_by_month          =   GROUP word_totals_per_month BY month;
+all_words_by_month          =   GROUP word_counts_per_month BY month;
 corpus_total_per_month      =   FOREACH all_words_by_month GENERATE 
                                     group AS month,  
-                                    SUM(word_totals_per_month.occurrences) AS occurrences;
-words_with_corpus_total     =   JOIN word_totals_per_month BY month, corpus_total_per_month BY month;
+                                    SUM(word_counts_per_month.occurrences) AS occurrences;
+words_with_corpus_total     =   JOIN word_counts_per_month BY month, corpus_total_per_month BY month;
 word_frequencies_per_month  =   FOREACH words_with_corpus_total GENERATE
-                                    word_totals_per_month::word AS word, 
-                                    word_totals_per_month::month AS month, 
-                                    (double)word_totals_per_month::occurrences / (double)corpus_total_per_month::occurrences 
+                                    word_counts_per_month::word AS word, 
+                                    word_counts_per_month::month AS month, 
+                                    (double)word_counts_per_month::occurrences / (double)corpus_total_per_month::occurrences 
                                         AS frequency: double;
 
 -- Group frequencies by word and order chronologically
@@ -137,10 +159,10 @@ trending_words_by_month     =   FOREACH pos_velocities_by_month {
                                     top_velocities = LIMIT ordered_velocities $MAX_NUM_TRENDING_WORDS_PER_MONTH;
                                     -- for debugging, change "top_velocities.word"
                                     -- to "top_velocities.(word, frequency, abs_vel, rel_vel, velocity)"
-                                    GENERATE group AS month, top_velocities.word AS trending_words;
+                                    GENERATE group AS month, top_velocities.(word, frequency, abs_vel, rel_vel, velocity) AS trending_words;
                                 }
 
 -- Remove any existing output and store to S3
 
 rmf $OUTPUT_PATH;
-STORE trending_words_by_month INTO '$OUTPUT_PATH' USING PigStorage('\t');
+STORE paragraphs_tokenized INTO '$OUTPUT_PATH' USING PigStorage('\t');

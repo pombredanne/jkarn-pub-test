@@ -1,8 +1,6 @@
 import re
+from HTMLParser import HTMLParser
 from pig_util import outputSchema
-
-split_date_in_url_pattern = re.compile('http(?:s)?://.*/(\d{4})/(\d{2})/(\d{2})/.*')
-unified_date_in_url_pattern = re.compile('http(?:s)?://.*/(\d{8})/.*')
 
 # Decorator to help udf's handle null input like Pig does (just ignore it and return null)
 def null_if_input_null(fn):
@@ -20,6 +18,9 @@ def null_if_input_null(fn):
     wrapped.__dict__.update(fn.__dict__)
 
     return wrapped
+
+split_date_in_url_pattern = re.compile('http(?:s)?://.*/(\d{4})/(\d{2})/(\d{2})/.*')
+unified_date_in_url_pattern = re.compile('http(?:s)?://.*/(\d{8})/.*')
 
 # 'http://techcrunch.com/2013/02/13/melodrama' -> ('2013', '02', '13')
 # 'http://allthingsd.com/20130213/business_money_yay' -> ('2013', '02', '13')
@@ -40,6 +41,22 @@ def get_article_date_from_url(url):
         return None
 
     return None
+
+paragraph_block_pattern = re.compile('<p.*?>(.*?)</p>')
+
+# Extracts the text from each <p>-tag delimited paragraph in an html string
+@outputSchema("paragraphs: {t: (paragraph: chararray)}")
+@null_if_input_null
+def extract_paragraphs(html):
+    return [(s,) for s in re.findall(paragraph_block_pattern, html)]
+
+word_with_punctuation_pattern = re.compile("^[^a-z']*([a-z']+)[^a-z']*$")
+
+# 'totally!!!' -> 'totally'
+@outputSchema("word: chararray")
+@null_if_input_null
+def trim_punctuation(word):
+    return re.sub(word_with_punctuation_pattern, '\\1', word) 
 
 # The history of word frequency for each month stored in the relation "freqs_by_word_ordered" in common_crawl_trending_topics.pig
 # skips months where that word did not occur. Therefore, when calculating a word's "frequency velocity", we test whether input tuples

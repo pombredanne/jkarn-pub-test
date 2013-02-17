@@ -34,10 +34,9 @@
 
 -- Load Python UDF's and Pig macros
 
-REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
 REGISTER '../udfs/python/twitter_sentiment.py' USING streaming_python AS twitter_sentiment;
+REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
 
-IMPORT '../macros/tweets.pig';
 IMPORT '../macros/words.pig';
 
 -- Load tweets
@@ -56,7 +55,7 @@ relevant_tweets         =   FILTER tweets_with_relevance BY (relevance > 0);
 
 tweets_tokenized        =   FOREACH relevant_tweets GENERATE words_lib.words_from_text(text) AS words;
 tweets_with_sentiment   =   FOREACH tweets_tokenized 
-                            GENERATE words, words_lib.sentiment(words) AS sentiment: double;
+                            GENERATE words, twitter_sentiment.sentiment(words) AS sentiment: double;
 
 SPLIT tweets_with_sentiment INTO
     positive_tweets IF (sentiment > 0.0),
@@ -81,7 +80,7 @@ pos_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(pos_word_frequencies, twee
 -- filtering out the words which signalled the positive sentiment in the first place (ex. "great", "awesome").
 
 pos_associations        =   ORDER pos_rel_frequencies BY rel_frequency DESC;
-pos_assoc_filtered      =   FILTER pos_associations BY (words_lib.in_word_set(word, 'positive') == 0);
+pos_assoc_filtered      =   FILTER pos_associations BY (twitter_sentiment.in_word_set(word, 'positive') == 0);
 top_pos_associations    =   LIMIT pos_assoc_filtered $MAX_NUM_ASSOCIATIONS;
 
 -- Do the same with negative words.
@@ -90,7 +89,7 @@ neg_word_totals         =   WORD_TOTALS(negative_tweets, $MIN_WORD_LENGTH);
 neg_word_frequencies    =   WORD_FREQUENCIES(neg_word_totals);
 neg_rel_frequencies     =   RELATIVE_WORD_FREQUENCIES(neg_word_frequencies, tweet_word_frequencies, $MIN_ASSOCIATION_FREQUENCY);
 neg_associations        =   ORDER neg_rel_frequencies BY rel_frequency DESC;
-neg_assoc_filtered      =   FILTER neg_associations BY (words_lib.in_word_set(word, 'negative') == 0);
+neg_assoc_filtered      =   FILTER neg_associations BY (twitter_sentiment.in_word_set(word, 'negative') == 0);
 top_neg_associations    =   LIMIT neg_assoc_filtered $MAX_NUM_ASSOCIATIONS;
 
 -- Remove any existing output and store to S3
