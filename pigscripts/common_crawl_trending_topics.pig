@@ -32,7 +32,7 @@
 -- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' to load a small dataset 
 -- of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing
 
-%default INPUT_PATH 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/6284.gz'
+%default INPUT_PATH 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz'
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/common_crawl';
 
 -- Only text inside <p> elements from the html is considered by the script
@@ -94,23 +94,19 @@ paragraphs              =   FOREACH pages_filtered GENERATE
 -- Tokenize each paragraph into words, and filter out paragraphs with few words 
 -- (these are probably miscellaneous text on the page not part of the main text of the article)
 
-paragraph_texts         =   FOREACH paragraphs 
+paragraph_texts         =   FOREACH paragraphs
                             GENERATE month, TRIM(REPLACE(LOWER(paragraph), '<.*?>', ' ')) AS paragraph;
-paragraphs_tokenized    =   FOREACH paragraph_texts 
-                            GENERATE month, STRSPLIT(paragraph, '\\s+') AS words;
-paragraphs_filtered     =   FILTER paragraphs_tokenized 
-                            BY (SIZE(words) >= $MIN_WORDS_PER_PARAGRAPH);
+paragraphs_tokenized    =   FOREACH paragraph_texts
+                            GENERATE month, TOKENIZE(paragraph) AS words;
+paragraphs_filtered     =   FILTER paragraphs_tokenized
+                            BY (COUNT(words) >= $MIN_WORDS_PER_PARAGRAPH);
 
 -- Flatten the tokenized paragraphs into a relation of individual words
--- Trim punctuation at the beginning and end of each word (ex. "totally!!!" -> "totally")
--- Filter out small words (probably not interesting) and words with non-Latin characters
+-- Filter out small words (probably not interesting)
 
 words                   =   FOREACH paragraphs_filtered 
-                            GENERATE month, FLATTEN(words) AS word: chararray;
-words_no_punctuation    =   FOREACH words 
-                            GENERATE month, common_crawl.trim_punctuation(word);
-words_filtered          =   FILTER words_no_punctuation 
-                            BY (SIZE(word) >= $MIN_WORD_LENGTH) AND NOT (word MATCHES '.*[^a-z\'].*');
+                            GENERATE FLATTEN(words) AS word: chararray, month;
+words_filtered          =   FILTER words BY (SIZE(word) >= $MIN_WORD_LENGTH);
 
 -- Get the total number of occurrences of each word in each month
 
@@ -165,4 +161,4 @@ trending_words_by_month     =   FOREACH pos_velocities_by_month {
 -- Remove any existing output and store to S3
 
 rmf $OUTPUT_PATH;
-STORE paragraphs_tokenized INTO '$OUTPUT_PATH' USING PigStorage('\t');
+STORE trending_words_by_month INTO '$OUTPUT_PATH' USING PigStorage('\t');

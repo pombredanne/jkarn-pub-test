@@ -50,14 +50,6 @@ paragraph_block_pattern = re.compile('<p.*?>(.*?)</p>')
 def extract_paragraphs(html):
     return [(s,) for s in re.findall(paragraph_block_pattern, html)]
 
-word_with_punctuation_pattern = re.compile("^[^a-z']*([a-z']+)[^a-z']*$")
-
-# 'totally!!!' -> 'totally'
-@outputSchema("word: chararray")
-@null_if_input_null
-def trim_punctuation(word):
-    return re.sub(word_with_punctuation_pattern, '\\1', word) 
-
 # The history of word frequency for each month stored in the relation "freqs_by_word_ordered" in common_crawl_trending_topics.pig
 # skips months where that word did not occur. Therefore, when calculating a word's "frequency velocity", we test whether input tuples
 # are from consecutive months: if they are, we look at them relative to each other; if they are not, we know that the actual
