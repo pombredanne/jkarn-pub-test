@@ -1,5 +1,4 @@
 import re
-from HTMLParser import HTMLParser
 from pig_util import outputSchema
 from math import sqrt
 
