@@ -5,6 +5,13 @@
  * Recommended cluster size with default parameters: 15
  * Approximate running time with recommended cluster size: 40 minutes
  *
+ * WARNING: as this script uses very large input records (each is a full webpage), 
+ * illustrate may be very slow or fail due to too much data if you select an alias
+ * towards the middle or end of the pipeline. If you wish to test, you can get a small dataset
+ * of articles from Nate Silver's FiveThirtyEight blog that you you process with a 2-node cluster 
+ * by changing the INPUT_PATH parameter to 
+ * 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz'
+ *
  * The script uses several GROUP, nested FOREACH, and FLATTEN operations, 
  * and at points the implementation may be hard to follow. To see the schema
  * of each relation in the data pipeline, you can run the command:
@@ -15,11 +22,9 @@
  * using an index by domain maintained by Triv.io.
  */
 
--- Loads 3.3GB compressed data by default
--- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' 
--- to load a small dataset of articles from the Nate Silver's FiveThirtyEight blog (~7 MB compressed) for testing tokenization
--- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz' 
--- to load a 500MB subset of the tech sites crawl for testing word counts / trending topics
+-- Loads 3.3 GB compressed data by default
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/fivethirtyeight_crawl/*.gz' for ~7 MB
+-- Change INPUT_PATH to 's3n://mortar-example-data/common-crawl/tech_sites_crawl/4916.gz' for ~500 MB
 
 %default INPUT_PATH 's3n://mortar-example-data/common-crawl/tech_sites_crawl/*.gz'
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/common_crawl';
