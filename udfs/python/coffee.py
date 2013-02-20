@@ -16,5 +16,5 @@ def is_coffee_tweet(text):
     if not text:
         return 0
     
-    lowercased = text.lower()
+    lowercased = set(text.lower().split())
     return 1 if any((True for phrase in COFFEE_SNOB_PHRASES if phrase in lowercased)) else 0
