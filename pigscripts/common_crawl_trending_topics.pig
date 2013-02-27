@@ -2,8 +2,8 @@
  * Finds trending topics (currently single-words only) by month for a corpus
  * of articles from technology news sites (gigaom, techcrunch, allthingsd).
  *
- * Recommended cluster size with default parameters: 15
- * Approximate running time with recommended cluster size: 40 minutes
+ * Recommended cluster size with default parameters: 5
+ * Approximate running time with recommended cluster size: 25 minutes
  *
  * WARNING: as this script uses very large input records (each is a full webpage), 
  * illustrate may be very slow or fail due to too much data if you select an alias
@@ -167,7 +167,7 @@ word_velocity_over_time     =   FOREACH freqs_by_word_ordered
 word_velocities             =   FOREACH word_velocity_over_time GENERATE FLATTEN(word_velocities);
 positive_velocities         =   FILTER word_velocities BY (velocity > 0.0);
 pos_velocities_by_period    =   GROUP positive_velocities BY period PARALLEL 1;
-trending_words_by_period     =   FOREACH pos_velocities_by_period {
+trending_words_by_period    =   FOREACH pos_velocities_by_period {
                                     ordered_velocities = ORDER positive_velocities BY velocity DESC;
                                     top_velocities = LIMIT ordered_velocities $MAX_NUM_TRENDING_WORDS_PER_PERIOD;
                                     -- for debugging, change "top_velocities.word"
