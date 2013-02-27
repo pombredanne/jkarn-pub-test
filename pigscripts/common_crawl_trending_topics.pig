@@ -46,7 +46,6 @@
 
 -- Jars needed by com.commoncrawl.pig.ArcLoader() to run
 
-REGISTER 's3n://mortar-example-data/common-crawl/jars/piggybank-for-crawl.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/httpcore-4.2.2.jar';
 REGISTER 's3n://mortar-example-data/common-crawl/jars/jsoup-1.7.2.jar';
 
