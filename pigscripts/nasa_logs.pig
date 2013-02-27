@@ -20,7 +20,7 @@
  */
  
 %default INPUT_PATH 's3n://mortar-example-data/nasa_logs/NASA_access_log_*.gz'
-%default OUTPUT_PATH 's3n://hawk-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/mortar-examples/nasa_logs'
+%default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/nasa_logs'
 %default ORDERING 'num_requests'    -- should be 'num_requests' or 'num_bytes'
 
 -- Register python udfs
