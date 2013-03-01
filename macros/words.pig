@@ -22,10 +22,9 @@ DEFINE WORD_FREQUENCIES(word_counts)
 RETURNS word_frequencies {
     all_words               =   GROUP $word_counts ALL;
     corpus_total            =   FOREACH all_words GENERATE SUM($word_counts.occurrences) AS occurrences;
-    words_with_corpus_total =   CROSS $word_counts, corpus_total;
-    $word_frequencies       =   FOREACH words_with_corpus_total GENERATE
+    $word_frequencies       =   FOREACH $word_counts GENERATE
                                     $0 AS word, $1 AS occurrences,
-                                    (double)$1 / (double)$2 AS frequency: double;
+                                    (double)$1 / (double)corpus_total.occurrences AS frequency: double;
 };
 
 /*
