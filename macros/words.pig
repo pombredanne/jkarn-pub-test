@@ -6,11 +6,12 @@
  */
 DEFINE WORD_TOTALS(words_rel, min_length)
 RETURNS word_totals {
-    word_counts         =   FOREACH $words_rel GENERATE FLATTEN(words_lib.significant_word_count(words, $min_length));
-    words               =   GROUP word_counts BY word;
-    $word_totals        =   FOREACH words GENERATE 
+    words_flat          =   FOREACH $words_rel GENERATE FLATTEN(words) AS word;
+    significant_words   =   FILTER words_flat BY SIZE(word) >= $min_length;
+    words_grouped       =   GROUP significant_words BY word;
+    $word_totals        =   FOREACH words_grouped GENERATE 
                                 group AS word, 
-                                SUM(word_counts.occurrences) AS occurrences;
+                                COUNT(significant_words) AS occurrences;
 };
 
 /*

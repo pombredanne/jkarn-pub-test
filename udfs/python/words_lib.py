@@ -40,14 +40,3 @@ def words_from_text(text):
             [re.sub(word_with_punctuation_pattern, '\\1', word) 
              for word in re.split(whitespace_pattern, text.lower())
             ] if is_alphabetic(word)]
-
-# Finds the number of occurrences of each unique word in a bag of single-element word tuples, 
-# ignoring words of length < min_length
-@outputSchema("word_counts: {t: (word: chararray, occurrences: long)}")
-@null_if_input_null
-def significant_word_count(words_bag, min_length):
-    word_list = [t[0] for t in words_bag if len(t) > 0 and len(t[0]) >= min_length]
-    count = defaultdict(int)
-    for word in word_list:
-        count[word] += 1
-    return count.items()
