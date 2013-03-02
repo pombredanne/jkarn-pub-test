@@ -6,9 +6,6 @@
  * Approximate running time with recommended cluster size: 30 minutes
  * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
  *
- * Tweets are filtered to include only those which match the regular expression that 
- * that parameter SEARCH_PATTERN is set to. By default, the filter accepts all tweets.
- *
  * Words are filtered so that only those with length >= MIN_WORD_LENGTH are counted.
  *
  * Postive/negative associations (the words with the greatest relative frequency for positive/negative tweets)
@@ -22,7 +19,6 @@
 
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/twitter_sentiment'
 
-%default SEARCH_PATTERN '^.*\\$'
 %default MIN_WORD_LENGTH '4'
 
 -- for reference:
@@ -45,15 +41,9 @@ IMPORT '../macros/words.pig';
 tweets = LOAD 's3n://twitter-gardenhose-mortar/tweets' 
          USING org.apache.pig.piggybank.storage.JsonLoader('text: chararray');
 
--- Filter tweets to only look at those that match the search pattern
-
-tweets_with_relevance   =   FOREACH tweets 
-                            GENERATE text, twitter_sentiment.relevance(text, '$SEARCH_PATTERN') AS relevance;
-relevant_tweets         =   FILTER tweets_with_relevance BY (relevance > 0);
-
 -- Split the text of each tweet into words and calculate a sentiment score
 
-tweets_tokenized        =   FOREACH relevant_tweets GENERATE words_lib.words_from_text(text) AS words;
+tweets_tokenized        =   FOREACH tweets GENERATE words_lib.words_from_text(text) AS words;
 tweets_with_sentiment   =   FOREACH tweets_tokenized 
                             GENERATE words, twitter_sentiment.sentiment(words) AS sentiment: double;
 
