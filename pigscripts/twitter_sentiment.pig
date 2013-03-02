@@ -19,7 +19,7 @@
 
 %default OUTPUT_PATH 's3n://mortar-example-output-data/$MORTAR_EMAIL_S3_ESCAPED/twitter_sentiment'
 
-%default MIN_WORD_LENGTH '4'
+%default MIN_WORD_LENGTH '5'
 
 -- for reference:
 --     the 8,000'th most-frequent word in the English language has a frequency of ~ 0.00001
