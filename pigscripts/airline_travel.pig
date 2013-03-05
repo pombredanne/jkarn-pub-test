@@ -17,7 +17,7 @@ REGISTER '../udfs/python/airline_travel.py' USING streaming_python AS airline_tr
 -- Load CSV airline data from the Bureau of Transportation Statistics
 -- (see http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236)
 raw_data = LOAD '$INPUT_PATH' 
-          USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'NO_MULTILINE', 'NOCHANGE', 'SKIP_HEADER')
+          USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'NO_MULTILINE', 'NOCHANGE', 'SKIP_INPUT_HEADER')
              AS (year:int, month: int, unique_carrier:chararray, 
                  origin_airport_id:chararray, dest_airport_id:chararray,
                  dep_delay:int, dep_delay_new: int, arr_delay:int, arr_delay_new:int, cancelled:int);
