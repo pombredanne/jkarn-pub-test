@@ -58,7 +58,7 @@ by number of bytes served.
 
 The [twitter_sentiment](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/twitter_sentiment.pig) pigscript finds which words are most likely to appear in tweets expressing a "postive sentiment" and which words are most likely to appear in tweets expressing a "negative sentiment". It calculates these likelihoods by looking at the frequency of a word in the corpus of positive/negative tweets diveded by the frequency of that word in the corpus of all processed tweets. The words that cause tweets to be classified as positive/negative (ex. "awesome", "disappointing") in the first place are excluded from the associations, so you can see what caused the sentiments instead of the sentiments themselves. The tweets are taken from the [twitter-gardenhose](https://github.com/mortardata/twitter-gardenhose).
 
-## Advanced examples
+## Advanced Examples
 
 ### Twitter Pagerank
 
