@@ -2,9 +2,9 @@
  * Finds which words show up most frequently in tweets expressing positive and negative
  * sentiments relative to the word's frequency in the total corpus of tweets.
  *
- * Recommended cluster size with default parameters: 10
- * Approximate running time with recommended cluster size: 30 minutes
- * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
+ * Recommended cluster size with default parameters: 5
+ * Approximate running time with recommended cluster size: 40 minutes
+ * (first mapreduce job will take almost all of the time, so the progress meter will be inaccurate)
  *
  * Words are filtered so that only those with length >= MIN_WORD_LENGTH are counted.
  *
