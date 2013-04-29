@@ -2,9 +2,9 @@
  * Finds which words show up most frequently in tweets expressing positive and negative
  * sentiments relative to the word's frequency in the total corpus of tweets.
  *
- * Recommended cluster size with default parameters: 10
- * Approximate running time with recommended cluster size: 30 minutes
- * (first mapreduce job will take a majority of the time, so the progress meter will be inaccurate)
+ * Recommended cluster size with default parameters: 5
+ * Approximate running time with recommended cluster size: 40 minutes
+ * (first mapreduce job will take almost all of the time, so the progress meter will be inaccurate)
  *
  * Words are filtered so that only those with length >= MIN_WORD_LENGTH are counted.
  *
@@ -25,13 +25,13 @@
 --     the 8,000'th most-frequent word in the English language has a frequency of ~ 0.00001
 --     the 33,000'th most-frequent word in the English language has a frequency of ~ 0.000001
 --     the 113,000'th most-frequent word in the English language has a frequency of ~ 0.0000001
-%default MIN_ASSOCIATION_FREQUENCY '0.0000005'
+%default MIN_ASSOCIATION_FREQUENCY '0.00000125'
 %default MAX_NUM_ASSOCIATIONS '100'
 
--- Load Python UDF's and Pig macros
+-- Load Jython UDF's and Pig macros
 
-REGISTER '../udfs/python/twitter_sentiment.py' USING streaming_python AS twitter_sentiment;
-REGISTER '../udfs/python/words_lib.py' USING streaming_python AS words_lib;
+REGISTER '../udfs/jython/twitter_sentiment.py' USING streaming_python AS twitter_sentiment;
+REGISTER '../udfs/jython/words_lib.py' USING streaming_python AS words_lib;
 
 IMPORT '../macros/words.pig';
 
