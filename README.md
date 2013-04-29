@@ -57,3 +57,13 @@ by number of bytes served.
 ### twitter_sentiment: JSON data from Twitter
 
 The [twitter_sentiment](https://github.com/mortardata/mortar-examples/blob/master/pigscripts/twitter_sentiment.pig) pigscript finds which words are most likely to appear in tweets expressing a "postive sentiment" and which words are most likely to appear in tweets expressing a "negative sentiment". It calculates these likelihoods by looking at the frequency of a word in the corpus of positive/negative tweets diveded by the frequency of that word in the corpus of all processed tweets. The words that cause tweets to be classified as positive/negative (ex. "awesome", "disappointing") in the first place are excluded from the associations, so you can see what caused the sentiments instead of the sentiments themselves. The tweets are taken from the [twitter-gardenhose](https://github.com/mortardata/twitter-gardenhose).
+
+## Advanced Examples
+
+### Twitter Pagerank
+
+A separate Mortar project, [twitter-pagerank](https://github.com/mortardata/twitter-pagerank) shows how to embed Pig 
+in a Jython controlscript.  This project runs Pagerank, an algorithm that uses several iteration steps, on a subset of 
+the Twitter follower graph. The result is a list of who influential people on Twitter tend to follow. 
+There is a [tutorial](http://help.mortardata.com/tutorials/git_projects/working_with_iterative_algorithms) 
+on the Mortar help site which walks through the twitter-pagerank project.
