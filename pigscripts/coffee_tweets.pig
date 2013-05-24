@@ -16,9 +16,9 @@ REGISTER '../udfs/python/coffee.py' USING streaming_python AS coffee;
 -- Import shared code from pig macros to load up the twitter dataset
 IMPORT '../macros/tweets.pig';
 
--- Load up all of the JSON-formatted tweets
--- (to use just a single file, switch to SINGLE_TWEET_FILE())
-tweets = ALL_TWEETS();
+-- Load up a single file of the JSON-formatted tweets
+-- (to use all tweets, switch to ALL_TWEETS())
+tweets = SINGLE_TWEET_FILE();
 
 -- Filter to get only tweets that have a location in the US
 tweets_with_place = 
