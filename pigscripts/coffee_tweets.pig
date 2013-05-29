@@ -4,6 +4,9 @@
  * Loads up a week's-worth of tweets from the twitter-gardenhose (https://github.com/mortardata/twitter-gardenhose),
  * searches through them for telltale coffee snob phrases (single origin, la marzocco, etc) and rolls up the 
  * results by US state.
+ *
+ * NOTE: Currently uses a single tweet file -- for a longer job with better results,
+ * switch to ALL_TWEETS below.
  */
 
 -- Set the destination for our output 
