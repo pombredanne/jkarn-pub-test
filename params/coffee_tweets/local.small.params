@@ -1,0 +1,2 @@
+TWEET_LOAD_PATH=../local_data/tweets/3_tweets.json
+OUTPUT_PATH=../out/coffee_tweets
