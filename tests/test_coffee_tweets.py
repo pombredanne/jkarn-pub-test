@@ -18,13 +18,13 @@ class SomeTest(PigTestCase):
         self.assertTrue(51 > len(records))
 
         for (us_state, num_coffee_tweets, num_tweets, pct_coffee_tweets) in records:
-            self.assertTrue(us_state is not None)
-            self.assertTrue(num_coffee_tweets is not None)
-            self.assertTrue(num_tweets is not None)
-            self.assertTrue(pct_coffee_tweets is not None)
+            self.assertIsNotNone(us_state, None)
+            self.assertIsNotNone(num_coffee_tweets, None)
+            self.assertIsNotNone(num_tweets, None)
+            self.assertIsNotNone(pct_coffee_tweets, None)
 
-            self.assertTrue(pct_coffee_tweets >= 0.0, pct_coffee_tweets)
-            self.assertTrue(pct_coffee_tweets <= 100.0, pct_coffee_tweets)
+            self.assertGreaterEqual(pct_coffee_tweets, 0.0, pct_coffee_tweets)
+            self.assertLessEqual(pct_coffee_tweets, 100.0, pct_coffee_tweets)
 
 
 if __name__ == '__main__':
