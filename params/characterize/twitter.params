@@ -1,4 +1,0 @@
-LOADER=org.apache.pig.piggybank.storage.JsonLoader()
-INPUT_SRC=../local_data/tweets/1000_tweets.json
-OUTPUT_PATH=out/characterize/twitter
-INFER_TYPES=true
